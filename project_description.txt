@@ -1,0 +1,351 @@
+♟️ Pure Functional Event-Sourced Chess Architecture (Scala Edition)
+
+1. Executive Summary & Philosophy
+
+This project implements a high-performance Chess Engine using Scala 3 and Functional Reactive Programming (FRP) principles. We strictly reject mutable state, side effects, and imperative loops. Instead, we model the game of chess as a pure mathematical transition function.
+
+Instead of "Systems updating a World," our engine is defined as:
+
+$$S_{t+1} = f(S_t, E)$$
+
+Where:
+
+$S$ is the Immutable State (The World).
+
+$E$ is the Event (Move Intent).
+
+$f$ is the pure Transition Function (The Interpreter).
+
+Core Tenants
+
+Immutability: The board never changes. We create new boards efficiently via Structural Sharing.
+
+Referential Transparency: Functions depend only on their inputs. No global variables.
+
+Event Sourcing: The "Truth" is the history of moves. The current state is merely a Fold over that history.
+
+Type Safety: Illegal states are unrepresentable via Algebraic Data Types (ADTs).
+
+2. The Data Model (Algebraic Data Types)
+
+We use Scala 3's concise syntax to define the domain.
+
+A. Primitives & Opaque Types
+
+To ensure performance parity with C++, we use Opaque Types for high-frequency data, allowing zero-overhead abstraction over primitive integers.
+
+package domain
+
+// 0-63 index, represented as a Byte at runtime
+opaque type Square = Byte
+object Square {
+  def from(x: Int, y: Int): Option[Square] = ...
+}
+
+// 64-bit Long for bitwise operations (0 runtime overhead)
+opaque type Bitboard = Long
+extension (b: Bitboard) {
+  def contains(s: Square): Boolean = (b & (1L << s)) != 0
+  def union(other: Bitboard): Bitboard = b | other
+  def intersection(other: Bitboard): Bitboard = b & other
+  def complement: Bitboard = ~b
+}
+
+// Bitmask for Castling Rights (0000 to 1111)
+opaque type CastlingRights = Byte
+
+
+B. Domain Entities
+
+enum Color:
+  case White, Black
+  def opposite: Color = this match { case White => Black; case Black => White }
+
+enum PieceType:
+  case Pawn, Knight, Bishop, Rook, Queen, King
+
+case class Piece(kind: PieceType, color: Color)
+
+case class Position(x: Int, y: Int)
+
+
+C. The World Aggregate (The Snapshot)
+
+The World is the single source of truth. It is an immutable Case Class.
+
+case class World(
+  // High-level representation for UI/Logic
+  board: Vector[Option[Piece]], 
+  
+  // Low-level representation for Move Gen (Bitboards)
+  occupancy: Map[Color, Bitboard],
+  
+  // Game History & Rules
+  history: List[MoveEvent],
+  turn: Color,
+  castlingRights: CastlingRights,
+  enPassantTarget: Option[Square], // The square behind a double-pushed pawn
+  halfMoveClock: Int // For 50-move rule
+)
+
+
+3. The Functional Update Cycle (The Engine)
+
+The engine does not "execute" moves; it transforms data through a pipeline. We utilize Railroad Oriented Programming (Monadic Composition) to handle validation.
+
+A. The Input: Intent
+
+case class MoveIntent(from: Position, to: Position, promotion: Option[PieceType])
+
+
+B. The Pipeline (Monadic Flow)
+
+We use Either[DomainError, World] (or Cats Validated) to chain operations. If any step fails (Left), the pipeline short-circuits.
+
+type ValidationResult = Either[ChessError, World]
+
+def processMove(currentWorld: World, intent: MoveIntent): ValidationResult = {
+  for {
+    _ <- GeometryValidator.validate(intent)           // Is it diagonal/straight?
+    _ <- PathValidator.validate(currentWorld, intent) // Is the path clear?
+    _ <- RuleValidator.validate(currentWorld, intent) // Is it checking own king?
+    nextWorld <- Reducer.apply(currentWorld, intent)  // Apply State Change
+  } yield nextWorld
+}
+
+
+C. The Reducer (State Transition)
+
+The Reducer is the only place where the World is updated. It uses Lenses (Monocle) for deep, immutable updates.
+
+Remove piece from from.
+
+Place piece at to.
+
+Update Bitboards (XOR operations).
+
+Update Metadata (Toggle turn, update castling rights, set en-passant target).
+
+Append event to History.
+
+4. Complex Mechanics & Edge Cases
+
+A. The "Shadow World" (Simulation)
+
+Because cloning the World is $O(1)$ (effectively instant due to persistent data structures), we simulate moves by simply creating a new variable.
+
+Check Detection: To see if a move is legal, we speculatively generate nextWorld. If nextWorld.kingUnderAttack is true, the move is invalid.
+
+No "Unmake Move": We never need to "undo" a move on the board. We simply discard the nextWorld variable and keep using currentWorld.
+
+B. Castling Rights
+
+Castling is managed via bitmasks. When a King or Rook moves, the Reducer applies a mask:
+
+$$Rights_{new} = Rights_{old} \ \& \ \sim Mask_{moved}$$
+
+C. En Passant
+
+Turn T (Pawn pushes 2): Reducer sets world.enPassantTarget = Some(skippedSquare).
+
+Turn T+1: If a capture happens on that square, the pawn behind it is removed.
+
+Cleanup: Any move that isn't a double-push resets enPassantTarget to None.
+
+5. AI Search: Pure & Parallel (Cats Effect / ZIO)
+
+We leverage Scala's advanced concurrency model (Fibers/Green Threads) to run searches in parallel without fear of race conditions (because data is immutable).
+
+A. Parallel Minimax
+
+def search(world: World, depth: Int): IO[Evaluation] = {
+  if (depth == 0) IO.pure(StaticEval(world))
+  else {
+    val moves = MoveGenerator.generate(world)
+    // Scatter-Gather: Explore all branches in parallel
+    moves.parTraverse(move => 
+      search(Reducer(world, move), depth - 1).map(eval => (move, eval))
+    ).map(results => selectBest(results))
+  }
+}
+
+
+B. Immutable Transposition Table
+
+Instead of a mutable global hash map, we use an atomic reference (Ref) containing an immutable Map, or a concurrent thread-safe map wrapped in an Effect.
+
+Zobrist Hashing: Calculated incrementally via XOR during the Reducer phase.
+
+6. Optimization Strategy
+
+A. Bitboards
+
+While the UI uses high-level Vector structures, the AI/Move Generator uses Bitboard (Longs).
+
+Sliding Pieces: Magic Bitboards or Kogge-Stone algorithms implemented via pure bitwise extension methods.
+
+Performance: Compiles down to JVM primitive ladd, land, lxor.
+
+B. Structural Sharing
+
+We utilize Scala's standard library Vector (32-way bit-mapped trie). Updating one square on a 64-square board does not copy the whole array; it creates a new root sharing most of the structure with the old root.
+
+7. Testing Strategy: Property-Based Testing
+
+We do not rely solely on unit tests. We use ScalaCheck to prove laws.
+
+Generators:
+
+Gen[World]: Generates random valid chess positions.
+
+Properties:
+
+The Law of Reversibility:
+unmake(make(world, move)) == world (excluding irreversible moves like captures/pawn moves).
+
+The Law of Validity:
+legalMoves(world).forall(m => !isCheck(make(world, m), myColor))
+
+The Law of Determinism:
+Evaluating the same board twice must yield the exact same score.
+
+8. Parsing & Interoperability
+
+We use Parser Combinators (Cats Parse) instead of Regex.
+
+FEN Parser: String => Either[ParserError, World]
+
+UCI Loop: A stream processing pipeline (fs2).
+
+Stream(stdin)
+  .through(text.utf8.decode)
+  .through(parseUCICommand)
+  .evalMap(engine.process)
+  .map(response => response.toString)
+  .to(stdout)
+
+
+9. The Error Domain (Strict ADTs)
+
+We avoid Exceptions entirely. Errors are data, modeled as a sealed hierarchy. This forces the compiler to check that every error case is handled.
+
+package domain.errors
+
+sealed trait ChessError
+object ChessError {
+  // Logical Errors
+  case object PathBlocked extends ChessError
+  case object TargetOccupiedByFriendly extends ChessError
+  case object KingInCheck extends ChessError
+  case object InvalidCastlingRights extends ChessError
+  
+  // Syntax Errors
+  case class ParsingFailure(input: String, reason: String) extends ChessError
+  
+  // System Errors (should be rare in pure code)
+  case class UnknownState(msg: String) extends ChessError
+}
+
+
+10. Project Configuration (build.sbt)
+
+This project relies on the Typelevel ecosystem for Functional Programming primitives.
+
+val scala3Version = "3.3.1"
+
+lazy val root = project
+  .in(file("."))
+  .settings(
+    name := "pure-chess-engine",
+    version := "0.1.0-SNAPSHOT",
+    scalaVersion := scala3Version,
+    
+    libraryDependencies ++= Seq(
+      // The Core FP Stack
+      "org.typelevel" %% "cats-core"    % "2.10.0",
+      "org.typelevel" %% "cats-effect"  % "3.5.2", // IO Monad
+      
+      // Streaming IO (for UCI Protocol)
+      "co.fs2"        %% "fs2-core"     % "3.9.3",
+      "co.fs2"        %% "fs2-io"       % "3.9.3",
+      
+      // Optics for Immutable Data Access
+      "dev.optics"    %% "monocle-core"  % "3.2.0",
+      "dev.optics"    %% "monocle-macro" % "3.2.0",
+      
+      // Parsing
+      "org.typelevel" %% "cats-parse"    % "1.0.0",
+      
+      // Testing
+      "org.scalacheck" %% "scalacheck"   % "1.17.0" % Test
+    )
+  )
+
+
+11. Application Entry Point (IOApp)
+
+The Main object is the only "Impure" part of the application. It wires the pure process function to the dirty world of Standard Input/Output.
+
+import cats.effect.{IO, IOApp}
+import fs2.io.stdin
+import fs2.text
+
+object Main extends IOApp.Simple {
+
+  // The Pure Function
+  def enginePipe: fs2.Pipe[IO, String, String] = stream => 
+    stream.map { command =>
+      if (command == "uci") "uciok"
+      else "unknown command"
+      // In reality, this calls Engine.process(command)
+    }
+
+  // The Impure Wiring
+  val run: IO[Unit] = 
+    stdin[IO](bufSize = 4096)
+      .through(text.utf8.decode)
+      .through(text.lines)
+      .through(enginePipe) // Inject the logic
+      .map(response => response + "\n")
+      .through(fs2.io.stdout)
+      .compile
+      .drain
+}
+
+
+12. Directory Structure (Standard sbt)
+
+/src
+├── main/
+│   ├── scala/
+│   │   ├── domain/           # The Models
+│   │   │   ├── models.scala      # Piece, World, Position
+│   │   │   ├── bitboards.scala   # Opaque Types & Bitwise logic
+│   │   │   ├── events.scala      # ADTs (MoveExecuted, Capture)
+│   │   │   └── errors.scala      # Sealed Trait Error Hierarchy
+│   │   ├── logic/            # The Pure Core
+│   │   │   ├── validators.scala  # (World, Intent) => Result
+│   │   │   ├── reducers.scala    # (World, Event) => World
+│   │   │   └── movegen.scala     # Legal move generation
+│   │   ├── pipeline/         # The Orchestrator
+│   │   │   └── flow.scala        # Railway pattern composition
+│   │   ├── ai/               # The Intelligence
+│   │   │   ├── search.scala      # Recursive Parallel Minimax
+│   │   │   └── eval.scala        # Pure Heuristics
+│   │   └── Main.scala        # IOApp (Entry Point)
+└── test/
+    └── scala/
+        └── properties/       # ScalaCheck invariants
+
+
+13. Conclusion
+
+This architecture represents the intersection of Game Theory and Category Theory. By treating Chess not as a state machine but as a flow of immutable transformations, we achieve a system that is:
+
+Bug-Resistant: Illegal states are compiler errors.
+
+Parallel-Ready: Zero locks, zero race conditions.
+
+Testable: Properties are verified against thousands of random scenarios.
+
+We trade raw C++ pointer arithmetic for architectural purity, relying on the JVM's JIT and GraalVM Native Image to close the performance gap.

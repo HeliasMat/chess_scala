@@ -1,0 +1,21 @@
+# Scala/sbt
+target/
+.bsp/
+.metals/
+.vscode/
+*.class
+*.log
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
