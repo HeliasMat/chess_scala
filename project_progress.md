@@ -97,20 +97,40 @@ This document tracks the advancement of the Pure Functional Event-Sourced Chess 
 - `src/main/scala/domain/events.scala` (new)
 - `src/main/scala/domain/errors.scala` (new)
 
-#### Next Steps:
-- Proceed to Phase 3: Core Logic Implementation
-
----
-
-## Future Phases (Planned)
-
-### Phase 2: Domain Modeling (2-3 weeks)
-**Status:** Ready to start
-**Goal:** Define core algebraic data types and immutable data structures
+## Project Status: Phase 3.2 Complete ✅
 
 ### Phase 3: Core Logic Implementation (4-5 weeks)
-**Status:** Pending
-**Goal:** Implement pure functional update cycle and move validation
+
+#### 3.1 Bitboard Operations Implementation ✅
+- **Date:** January 30, 2026
+- **Details:**
+  - Created `logic/bitboardops.scala` with comprehensive bitboard operations
+  - Implemented precomputed attack tables for all piece types (pawn, knight, king)
+  - Added sliding piece attack calculations (bishop, rook, queen) with occupancy awareness
+  - Implemented path clearance functions for sliding pieces
+  - Added bitboard utility functions (getAllOccupied, getOccupiedByColor, squares iteration)
+  - Fixed Square opaque type conversion issues during compilation
+  - Successfully compiled and verified all implementations
+
+#### 3.2 Move Generation System ✅
+- **Date:** January 30, 2026
+- **Details:**
+  - Created `logic/movegen.scala` with complete MoveGenerator object
+  - Implemented pseudo-legal move generation for all piece types
+  - Added pawn moves including promotions, en passant, and double advances
+  - Implemented sliding piece moves (bishop, rook, queen) with occupancy blocking
+  - Added knight and king move generation with attack tables
+  - Implemented castling move generation with proper validation
+  - Added check detection and legal move filtering
+  - Fixed type mismatch errors (Vector to List conversion)
+  - Successfully compiled and verified all implementations
+
+#### Files Created/Modified:
+- `src/main/scala/logic/bitboardops.scala` (new)
+- `src/main/scala/logic/movegen.scala` (new)
+
+#### Next Steps:
+- Proceed to Phase 3.3: Validation Pipeline Implementation
 
 ### Phase 4: AI Implementation (3-4 weeks)
 **Status:** Pending
@@ -142,15 +162,18 @@ This document tracks the advancement of the Pure Functional Event-Sourced Chess 
 - **13:45** - Established directory structure
 - **13:45** - Verified environment and compilation
 - **13:50** - Created project_progress.md to track advancement
+- **14:00** - Completed Phase 2: Domain Modeling (bitboards, models, events, errors)
+- **14:05** - Completed Phase 3.1: Bitboard Operations Implementation
+- **14:05** - Completed Phase 3.2: Move Generation System
 
 ---
 
 ## Metrics
-- **Lines of Code:** 0 (infrastructure only)
-- **Files Created:** 2 (build.sbt, .gitignore)
+- **Lines of Code:** ~600 (domain models + bitboard operations + move generation)
+- **Files Created:** 7 (build.sbt, .gitignore, 4 domain files, 2 logic files)
 - **Dependencies:** 6 major libraries configured
 - **Build Status:** ✅ Compiling successfully
-- **Test Coverage:** N/A (no code yet)
+- **Test Coverage:** N/A (no tests yet)
 
 ## Notes
 - Project follows strict functional programming principles
