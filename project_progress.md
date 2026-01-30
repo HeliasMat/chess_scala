@@ -49,9 +49,56 @@ This document tracks the advancement of the Pure Functional Event-Sourced Chess 
 - `.gitignore` (new)
 - Directory structure created via `create_directory` commands
 
+#### 2.1 Primitive Types and Opaque Types Implementation ✅
+- **Date:** January 30, 2026
+- **Details:**
+  - Created `domain/bitboards.scala` with three opaque types
+  - Implemented `Square` opaque type with validation (0-63 range), coordinate conversion, and arithmetic operations
+  - Implemented `Bitboard` opaque type with comprehensive bitwise operations (contains, union, intersection, complement)
+  - Implemented `CastlingRights` opaque type with bitmask operations for KQkq rights
+  - Added extension methods for all types with proper toString representations
+  - Fixed compilation issues with toString overrides in extensions
+  - Successfully compiled and verified all implementations
+
+#### Files Created/Modified:
+- `src/main/scala/domain/bitboards.scala` (new)
+
+#### 2.2 Core Algebraic Data Types Definition ✅
+- **Date:** January 30, 2026
+- **Details:**
+  - Created `domain/models.scala` with core ADTs
+  - Implemented `Color` enum with `opposite` method and FEN conversion
+  - Implemented `PieceType` enum with FEN symbols and material values
+  - Implemented `Piece` case class with FEN conversion and material value
+  - Implemented `Position` case class with coordinate validation, algebraic notation, and utility methods
+  - Implemented `MoveIntent` case class for user move input
+  - Added comprehensive companion objects with factory methods
+
+#### 2.3 World Aggregate Definition ✅
+- **Date:** January 30, 2026
+- **Details:**
+  - Implemented `World` case class as the single source of truth with all required fields
+  - Created `World.initial` with proper starting chess position
+  - Added bitboard occupancy initialization for both colors
+  - Implemented extension methods: `pieceAt`, `isOccupied`, `isOccupiedBy`, `kingPosition`
+  - Added placeholder `toFen` method for future FEN implementation
+
+#### 2.4 Event and Intent Types Definition ✅
+- **Date:** January 30, 2026
+- **Details:**
+  - Created `domain/events.scala` with event hierarchy
+  - Implemented `MoveEvent` sealed trait with concrete event types: `MoveExecuted`, `CastlingExecuted`, `EnPassantExecuted`, `PromotionExecuted`
+  - Created `domain/errors.scala` with comprehensive `ChessError` sealed trait
+  - Added logical errors, validation errors, syntax errors, and system errors
+  - All types compile successfully and integrate properly
+
+#### Files Created/Modified:
+- `src/main/scala/domain/models.scala` (new)
+- `src/main/scala/domain/events.scala` (new)
+- `src/main/scala/domain/errors.scala` (new)
+
 #### Next Steps:
-- Proceed to Phase 2: Domain Modeling
-- Begin implementing opaque types and core ADTs
+- Proceed to Phase 3: Core Logic Implementation
 
 ---
 
