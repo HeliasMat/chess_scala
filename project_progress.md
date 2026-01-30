@@ -97,7 +97,7 @@ This document tracks the advancement of the Pure Functional Event-Sourced Chess 
 - `src/main/scala/domain/events.scala` (new)
 - `src/main/scala/domain/errors.scala` (new)
 
-## Project Status: Phase 3.2 Complete ✅
+## Project Status: Phase 3.3 Complete ✅
 
 ### Phase 3: Core Logic Implementation (4-5 weeks)
 
@@ -125,12 +125,25 @@ This document tracks the advancement of the Pure Functional Event-Sourced Chess 
   - Fixed type mismatch errors (Vector to List conversion)
   - Successfully compiled and verified all implementations
 
+#### 3.3 Validation Pipeline Implementation ✅
+- **Date:** January 30, 2026
+- **Details:**
+  - Created `pipeline/validators.scala` with comprehensive validation system
+  - Implemented GeometryValidator for basic move structure and piece ownership validation
+  - Implemented PathValidator for sliding piece path clearance with occupancy awareness
+  - Implemented RuleValidator for chess-specific rules (check, castling rights, en passant)
+  - Added comprehensive error handling with Either[NonEmptyList[ChessError], A] type
+  - Created ValidationPipeline that combines all validators into a unified validation system
+  - Fixed compilation issues with pattern matching and type conversions
+  - Successfully compiled and verified all implementations
+
 #### Files Created/Modified:
 - `src/main/scala/logic/bitboardops.scala` (new)
 - `src/main/scala/logic/movegen.scala` (new)
+- `src/main/scala/pipeline/validators.scala` (new)
 
 #### Next Steps:
-- Proceed to Phase 3.3: Validation Pipeline Implementation
+- Proceed to Phase 3.4: State Reducer Implementation
 
 ### Phase 4: AI Implementation (3-4 weeks)
 **Status:** Pending
@@ -165,12 +178,13 @@ This document tracks the advancement of the Pure Functional Event-Sourced Chess 
 - **14:00** - Completed Phase 2: Domain Modeling (bitboards, models, events, errors)
 - **14:05** - Completed Phase 3.1: Bitboard Operations Implementation
 - **14:05** - Completed Phase 3.2: Move Generation System
+- **14:12** - Completed Phase 3.3: Validation Pipeline Implementation
 
 ---
 
 ## Metrics
-- **Lines of Code:** ~600 (domain models + bitboard operations + move generation)
-- **Files Created:** 7 (build.sbt, .gitignore, 4 domain files, 2 logic files)
+- **Lines of Code:** ~800 (domain models + bitboard operations + move generation + validation)
+- **Files Created:** 8 (build.sbt, .gitignore, 4 domain files, 2 logic files, 1 pipeline file)
 - **Dependencies:** 6 major libraries configured
 - **Build Status:** ✅ Compiling successfully
 - **Test Coverage:** N/A (no tests yet)
