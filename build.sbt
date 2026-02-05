@@ -24,6 +24,7 @@ lazy val root = project
       "org.typelevel" %% "cats-parse"    % "1.0.0",
 
       // Testing
+      "org.scalameta"  %% "munit"        % "1.0.1" % Test,
       "org.scalacheck" %% "scalacheck"   % "1.17.0" % Test
     ),
 
