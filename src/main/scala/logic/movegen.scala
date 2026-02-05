@@ -38,29 +38,35 @@ object MoveGenerator:
 
     var moves = List[MoveIntent]()
 
-    val oneStep = Position(square.x, square.y + direction)
-    if oneStep.isValid && !world.isOccupied(oneStep.toSquare.get) then
-      if oneStep.y == promotionRank then
-        // Promotion moves
-        moves = moves ++ List(
-          MoveIntent(square.toPosition, oneStep, Some(PieceType.Queen)),
-          MoveIntent(square.toPosition, oneStep, Some(PieceType.Rook)),
-          MoveIntent(square.toPosition, oneStep, Some(PieceType.Bishop)),
-          MoveIntent(square.toPosition, oneStep, Some(PieceType.Knight))
-        )
-      else
-        moves = MoveIntent(square.toPosition, oneStep, None) :: moves
+    val oneStepY = square.y + direction
+    if oneStepY >= 0 && oneStepY < 8 then
+      val oneStep = Position(square.x, oneStepY)
+      if !world.isOccupied(oneStep.toSquare.get) then
+        if oneStep.y == promotionRank then
+          // Promotion moves
+          moves = moves ++ List(
+            MoveIntent(square.toPosition, oneStep, Some(PieceType.Queen)),
+            MoveIntent(square.toPosition, oneStep, Some(PieceType.Rook)),
+            MoveIntent(square.toPosition, oneStep, Some(PieceType.Bishop)),
+            MoveIntent(square.toPosition, oneStep, Some(PieceType.Knight))
+          )
+        else
+          moves = MoveIntent(square.toPosition, oneStep, None) :: moves
 
-      // Two-step move from starting position
-      if square.y == startRank then
-        val twoStep = Position(square.x, square.y + 2 * direction)
-        if twoStep.isValid && !world.isOccupied(twoStep.toSquare.get) then
-          moves = MoveIntent(square.toPosition, twoStep, None) :: moves
+        // Two-step move from starting position
+        if square.y == startRank then
+          val twoStepY = square.y + 2 * direction
+          if twoStepY >= 0 && twoStepY < 8 then
+            val twoStep = Position(square.x, twoStepY)
+            if !world.isOccupied(twoStep.toSquare.get) then
+              moves = MoveIntent(square.toPosition, twoStep, None) :: moves
 
     // Captures
     for dx <- List(-1, 1) do
-      val capturePos = Position(square.x + dx, square.y + direction)
-      if capturePos.isValid then
+      val captureX = square.x + dx
+      val captureY = square.y + direction
+      if captureX >= 0 && captureX < 8 && captureY >= 0 && captureY < 8 then
+        val capturePos = Position(captureX, captureY)
         val captureSquare = capturePos.toSquare.get
         // Regular capture
         if world.isOccupiedBy(captureSquare, color.opposite) then
@@ -81,26 +87,33 @@ object MoveGenerator:
 
   private def generateKnightMoves(world: World, square: Square, occupied: Bitboard, enemyOccupied: Bitboard): List[MoveIntent] =
     val attacks = BitboardOps.getKnightAttacks(square)
-    val validMoves = attacks.difference(world.occupancy(world.turn))
+    val allyOccupied = world.occupancy(world.turn)
+    val validMoves = attacks.difference(allyOccupied)
     validMoves.squares.map(target =>
       MoveIntent(square.toPosition, target.toPosition, None)
     )
 
   private def generateBishopMoves(world: World, square: Square, occupied: Bitboard, enemyOccupied: Bitboard): List[MoveIntent] =
     val attacks = BitboardOps.getBishopAttacks(square, occupied)
-    attacks.squares.map(target =>
+    val allyOccupied = world.occupancy(world.turn)
+    val validMoves = attacks.difference(allyOccupied)
+    validMoves.squares.map(target =>
       MoveIntent(square.toPosition, target.toPosition, None)
     )
 
   private def generateRookMoves(world: World, square: Square, occupied: Bitboard, enemyOccupied: Bitboard): List[MoveIntent] =
     val attacks = BitboardOps.getRookAttacks(square, occupied)
-    attacks.squares.map(target =>
+    val allyOccupied = world.occupancy(world.turn)
+    val validMoves = attacks.difference(allyOccupied)
+    validMoves.squares.map(target =>
       MoveIntent(square.toPosition, target.toPosition, None)
     )
 
   private def generateQueenMoves(world: World, square: Square, occupied: Bitboard, enemyOccupied: Bitboard): List[MoveIntent] =
     val attacks = BitboardOps.getQueenAttacks(square, occupied)
-    attacks.squares.map(target =>
+    val allyOccupied = world.occupancy(world.turn)
+    val validMoves = attacks.difference(allyOccupied)
+    validMoves.squares.map(target =>
       MoveIntent(square.toPosition, target.toPosition, None)
     )
 
@@ -109,7 +122,8 @@ object MoveGenerator:
 
     // Regular king moves
     val attacks = BitboardOps.getKingAttacks(square)
-    val validMoves = attacks.difference(world.occupancy(world.turn))
+    val allyOccupied = world.occupancy(world.turn)
+    val validMoves = attacks.difference(allyOccupied)
     moves = moves ++ validMoves.squares.map(target =>
       MoveIntent(square.toPosition, target.toPosition, None)
     )
@@ -149,7 +163,7 @@ object MoveGenerator:
     moves
 
   // Check if a move would leave the king in check
-  private def wouldBeInCheck(world: World, move: MoveIntent): Boolean =
+  def wouldBeInCheck(world: World, move: MoveIntent): Boolean =
     // Create a temporary world with the move applied
     val tempWorld = applyMove(world, move)
     isInCheck(tempWorld, world.turn)

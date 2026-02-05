@@ -245,9 +245,9 @@ object uci:
     if moveStr.length < 4 then
       Left(s"Invalid move format: $moveStr")
     else
-      val fromFile = moveStr.charAt(0).asDigit - 1
-      val fromRank = moveStr.charAt(1).asDigit - 1
-      val toFile = moveStr.charAt(2).asDigit - 1
+      val fromFile = moveStr.charAt(0) - 'a'  // 'a' = 0, 'b' = 1, ..., 'h' = 7
+      val fromRank = moveStr.charAt(1).asDigit - 1  // '1' = 0, '2' = 1, ..., '8' = 7
+      val toFile = moveStr.charAt(2) - 'a'
       val toRank = moveStr.charAt(3).asDigit - 1
 
       // Handle promotion if present (e.g., "e7e8q")
