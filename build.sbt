@@ -23,6 +23,10 @@ lazy val root = project
       // Parsing
       "org.typelevel" %% "cats-parse"    % "1.0.0",
 
+      // JMH benchmarking
+      "org.openjdk.jmh" % "jmh-core" % "1.36",
+      "org.openjdk.jmh" % "jmh-generator-annprocess" % "1.36",
+
       // Testing
       "org.scalameta"  %% "munit"        % "1.0.1" % Test,
       "org.scalacheck" %% "scalacheck"   % "1.17.0" % Test

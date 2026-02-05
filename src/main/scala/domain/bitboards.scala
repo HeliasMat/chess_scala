@@ -56,6 +56,20 @@ object Bitboard:
         case i if contains(i.toByte) => i.toByte
       }.toList
 
+    // Efficient iteration over set bits (least-significant-bit extraction)
+    def foreachSquare(f: Square => Unit): Unit =
+      var bits = b
+      while bits != 0L do
+        val lsb = bits & -bits
+        val idx = java.lang.Long.numberOfTrailingZeros(lsb)
+        f(idx.toByte)
+        bits &= bits - 1
+
+    def squaresFast: List[Square] =
+      val buf = scala.collection.mutable.ListBuffer.empty[Square]
+      foreachSquare(buf += _)
+      buf.toList
+
     def toString: String =
       val binary = b.toBinaryString.reverse.padTo(64, '0').reverse
       binary.grouped(8).mkString("\n")

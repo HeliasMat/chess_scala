@@ -380,6 +380,23 @@ This document tracks the advancement of the Pure Functional Event-Sourced Chess 
 **Status:** Pending
 **Goal:** Ensure correctness through comprehensive testing
 
+### Phase 6: Testing and Validation (Completed: February 5, 2026)
+- **Status:** Completed
+- **Goal:** Ensure correctness through comprehensive testing
+
+#### Summary of Phase 6 Completion (2026-02-05)
+- **What changed:** Fixed multiple move generation bugs (sliding pieces and knight move filtering), corrected UCI move parsing, and resolved test index issues in integration tests.
+- **Verification:** Ran full test-suite: `sbt test` — Result: 71/71 tests passed.
+- **Commit:** Fixes and test updates were committed to the repository.
+
+#### Artifacts Added
+- `src/main/scala/bench/Benchmark.scala` — simple micro-benchmark harness to measure move generation performance.
+- `README_BENCH.md` — instructions to run the benchmark locally.
+
+#### Next immediate steps
+- Start Phase 7 profiling and lightweight optimization passes (benchmarking + hotspot identification).
+
+
 ### Phase 7: Optimization and Performance Tuning (2-3 weeks)
 **Status:** Pending
 **Goal:** Achieve competitive performance

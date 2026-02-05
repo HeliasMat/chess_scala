@@ -88,34 +88,44 @@ object MoveGenerator:
   private def generateKnightMoves(world: World, square: Square, occupied: Bitboard, enemyOccupied: Bitboard): List[MoveIntent] =
     val attacks = BitboardOps.getKnightAttacks(square)
     val allyOccupied = world.occupancy(world.turn)
-    val validMoves = attacks.difference(allyOccupied)
-    validMoves.squares.map(target =>
-      MoveIntent(square.toPosition, target.toPosition, None)
-    )
+    val valid = attacks.difference(allyOccupied)
+    if valid.isEmpty then List()
+    else
+      val buf = scala.collection.mutable.ListBuffer.empty[MoveIntent]
+      valid.foreachSquare { target =>
+        buf += MoveIntent(square.toPosition, target.toPosition, None)
+      }
+      buf.toList
 
   private def generateBishopMoves(world: World, square: Square, occupied: Bitboard, enemyOccupied: Bitboard): List[MoveIntent] =
     val attacks = BitboardOps.getBishopAttacks(square, occupied)
     val allyOccupied = world.occupancy(world.turn)
-    val validMoves = attacks.difference(allyOccupied)
-    validMoves.squares.map(target =>
-      MoveIntent(square.toPosition, target.toPosition, None)
-    )
+    val valid = attacks.difference(allyOccupied)
+    if valid.isEmpty then List()
+    else
+      val buf = scala.collection.mutable.ListBuffer.empty[MoveIntent]
+      valid.foreachSquare { target => buf += MoveIntent(square.toPosition, target.toPosition, None) }
+      buf.toList
 
   private def generateRookMoves(world: World, square: Square, occupied: Bitboard, enemyOccupied: Bitboard): List[MoveIntent] =
     val attacks = BitboardOps.getRookAttacks(square, occupied)
     val allyOccupied = world.occupancy(world.turn)
-    val validMoves = attacks.difference(allyOccupied)
-    validMoves.squares.map(target =>
-      MoveIntent(square.toPosition, target.toPosition, None)
-    )
+    val valid = attacks.difference(allyOccupied)
+    if valid.isEmpty then List()
+    else
+      val buf = scala.collection.mutable.ListBuffer.empty[MoveIntent]
+      valid.foreachSquare { target => buf += MoveIntent(square.toPosition, target.toPosition, None) }
+      buf.toList
 
   private def generateQueenMoves(world: World, square: Square, occupied: Bitboard, enemyOccupied: Bitboard): List[MoveIntent] =
     val attacks = BitboardOps.getQueenAttacks(square, occupied)
     val allyOccupied = world.occupancy(world.turn)
-    val validMoves = attacks.difference(allyOccupied)
-    validMoves.squares.map(target =>
-      MoveIntent(square.toPosition, target.toPosition, None)
-    )
+    val valid = attacks.difference(allyOccupied)
+    if valid.isEmpty then List()
+    else
+      val buf = scala.collection.mutable.ListBuffer.empty[MoveIntent]
+      valid.foreachSquare { target => buf += MoveIntent(square.toPosition, target.toPosition, None) }
+      buf.toList
 
   private def generateKingMoves(world: World, square: Square, occupied: Bitboard, enemyOccupied: Bitboard): List[MoveIntent] =
     var moves = List[MoveIntent]()
@@ -123,10 +133,11 @@ object MoveGenerator:
     // Regular king moves
     val attacks = BitboardOps.getKingAttacks(square)
     val allyOccupied = world.occupancy(world.turn)
-    val validMoves = attacks.difference(allyOccupied)
-    moves = moves ++ validMoves.squares.map(target =>
-      MoveIntent(square.toPosition, target.toPosition, None)
-    )
+    val valid = attacks.difference(allyOccupied)
+    if valid.nonEmpty then
+      val buf = scala.collection.mutable.ListBuffer.empty[MoveIntent]
+      valid.foreachSquare { target => buf += MoveIntent(square.toPosition, target.toPosition, None) }
+      moves = moves ++ buf.toList
 
     // Castling moves
     if world.turn == Color.White then
