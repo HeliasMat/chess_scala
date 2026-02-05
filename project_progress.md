@@ -487,6 +487,108 @@ This document tracks the advancement of the Pure Functional Event-Sourced Chess 
 **Duration:** 3-4 days (Starting now)
 **Goal:** Implement Universal Chess Interface protocol for engine communication.
 
+##### Completed Tasks:
+
+###### 5.2.1 UCI Command Parsing ✅
+- **Date:** February 5, 2026
+- **Details:**
+  - Implemented complete UCI command parsing (`uci`, `isready`, `setoption`, `position`, `go`, `stop`, `quit`)
+  - Supports full `go` command syntax with all parameters (depth, time, nodes, mate, etc.)
+  - Proper handling of FEN positions and move sequences
+  - Robust error handling with Either[String, UciCommand]
+  - Created `pipeline/uci.scala` with ~330 lines of functional parsing code
+
+###### 5.2.2 UCI Response Formatting ✅
+- **Date:** February 5, 2026
+- **Details:**
+  - Implemented response formatting for all UCI output types
+  - BestMove responses with optional ponder move
+  - Info responses with evaluation metrics (depth, nodes, pv, score)
+  - Proper UCI protocol compliance
+  - `formatResponse` function for consistent output formatting
+
+###### 5.2.3 Position Management and Move Application ✅
+- **Date:** February 5, 2026
+- **Details:**
+  - Implemented `buildWorldFromPosition` for setting up positions from UCI commands
+  - Added `applyUciMove` for converting algebraic notation to game state updates
+  - Integrated with existing validation and state reduction pipeline
+  - Support for pawn promotion in move notation
+  - Full coordinate validation and error handling
+
+###### 5.2.4 UCI Move Conversion ✅
+- **Date:** February 5, 2026
+- **Details:**
+  - Implemented `moveToUci` for converting MoveIntent to UCI notation
+  - Support for pawn promotion notation (e2e8q, e2e8r, etc.)
+  - Proper file/rank conversion (0-7 to a-h and 0-7)
+
+##### Deliverables:
+- Complete `pipeline/uci.scala` file with ~330 lines of code
+- Full UCI protocol implementation for command parsing and response formatting
+- Position setup and move application system
+- Move notation conversion utilities
+
+#### Phase 5.3: IO Pipeline Implementation (Completed: February 5, 2026)
+**Duration:** ~30 minutes
+**Goal:** Create the impure boundary with stdin/stdout.
+
+##### Completed Tasks:
+
+###### 5.3.1 Main Application Class ✅
+- **Date:** February 5, 2026
+- **Details:**
+  - Created `Main.scala` with `IOApp.Simple` entry point
+  - Implemented `enginePipe` for stream-based command processing
+  - Proper stdin/stdout integration using fs2 streams
+  - UTF-8 encoding/decoding for text streams
+  - Comprehensive command dispatch to UCI protocol handler
+
+###### 5.3.2 Command Processing and Response Handling ✅
+- **Date:** February 5, 2026
+- **Details:**
+  - Implemented `processCommand` for translating UCI commands to responses
+  - Proper game state management with mutable World reference
+  - Error-resilient processing (invalid commands silently ignored per UCI spec)
+  - Support for all UCI command types with appropriate responses
+
+###### 5.3.3 Stream Processing Pipeline ✅
+- **Date:** February 5, 2026
+- **Details:**
+  - Implemented fs2 stream processing for stdin/stdout
+  - Proper line parsing and response formatting
+  - UTF-8 encoding for output stream
+  - Error handling and graceful shutdown (quit command)
+
+##### Deliverables:
+- Complete `Main.scala` with ~80 lines of code
+- Fully functional UCI-compatible chess engine entry point
+- Stream-based IO pipeline with fs2
+- Proper resource management through Cats Effect IO
+
+### Phase 5 Summary: Complete ✅
+**Total Duration:** 3 days (Actual: ~4 hours for phases 5.2-5.3)
+**Achievement:** UCI protocol implementation with full IO integration
+
+#### Files Created in Phase 5:
+- `src/main/scala/pipeline/fen.scala` (~200 lines) - FEN parser/generator (Phase 5.1)
+- `src/main/scala/pipeline/uci.scala` (~330 lines) - UCI protocol (Phase 5.2)
+- `src/main/scala/Main.scala` (~80 lines) - Entry point and IO (Phase 5.3)
+- `src/test/scala/UciParserTest.scala` (~105 lines) - 13 comprehensive tests
+
+#### Test Results:
+- **Total Tests:** 16 (3 FEN parser + 13 UCI parser)
+- **Passed:** 16/16 ✅
+- **Failed:** 0
+- **Coverage:** All UCI commands and responses tested
+
+#### Technical Highlights:
+- **Functional Design:** Pure function composition for command parsing and response generation
+- **Type Safety:** Sealed traits for command and response types
+- **Error Handling:** Comprehensive error handling with proper Either types
+- **Stream Processing:** fs2-based async stream handling
+- **Protocol Compliance:** Full UCI protocol support
+
 ## Notes
 - Project follows strict functional programming principles
 - All dependencies use Typelevel ecosystem
